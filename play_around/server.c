@@ -1,4 +1,3 @@
-/* Jiaye Wang jiw561 11231145 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,9 +25,7 @@ char *weather_lst[7] = {
 "Sunday's Weather:    Meteor Shower   Intensity: VII", 
 };
 
-char *date[7] = {
-"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
-};
+char *date[7] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 
 char *server_weather_response(char msg[]) {
   size_t n = strlen(msg);
@@ -39,32 +36,25 @@ char *server_weather_response(char msg[]) {
     if (strcmp(date[i], msg) == 0)
       return weather_lst[i];
   }
-  return "Error: invalid format of date";
+  return "Error: invalid input";
 }
 
 void listener(int sockfd) {
   char buff[LEN_MAX]; 
-  int n; 
+  char *response;
+
   while (1) { 
-      bzero(buff, LEN_MAX); 
- 
-      recv(sockfd, buff, sizeof(buff), 0); 
-      printf("From client: %s\t To client : ", buff); 
-      if (strncmp("exit", buff, 4) == 0) {
-        send(sockfd, "disconnect", 10 + 1, 0);
-        printf("Server exit\n");
-        break;
-      }
-      bzero(buff, LEN_MAX); 
-      n = 0; 
-      while ((buff[n++] = getchar()) != '\n'); 
- 
-      send(sockfd, buff, sizeof(buff), 0); 
- 
-      if (strncmp("Exit", buff, 4) == 0) { 
-          printf("Server Exit...\n"); 
-          break; 
-      } 
+    bzero(buff, sizeof buff);
+    recv(sockfd, buff, sizeof buff, 0); 
+    printf("From client: %s\n", buff); 
+
+    if (strncmp("exit", buff, 4) == 0) {
+      send(sockfd, "disconnect", 10 + 1, 0);
+      printf("Server exit\n");
+      break;
+    } 
+    response = server_weather_response(buff);
+    send(sockfd, response, strlen(response), 0); 
   } 
 }
 
@@ -86,7 +76,7 @@ int main(void) {
 	socklen_t sin_size;
 	struct sigaction sa;
 	int yes=1;
-	char s[INET6_ADDRSTRLEN];
+	// char s[INET6_ADDRSTRLEN];
 	int rv;
 
 	memset(&hints, 0, sizeof hints);

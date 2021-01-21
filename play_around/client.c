@@ -20,20 +20,19 @@ void client_sender(int sockfd) {
   char buf[LEN_MAX];
 
   // char buff[LEN_MAX]; 
-  int n; 
   while (1) { 
-    printf("> "); 
+    printf("$ "); 
     scanf("%s", buf);
     send(sockfd, buf, strlen(buf), 0); 
 
     bzero(buf, sizeof(buf)); 
     recv(sockfd, buf, sizeof(buf), 0); 
 
-    printf("From Server : %s\n", buf); 
     if ((strncmp(buf, "disconnect", 10)) == 0) { 
-      printf("Client Exit...\n"); 
+      printf("Client Exit\n"); 
       break; 
     } 
+    printf("%s\n", buf); 
   } 
 }
 
@@ -49,7 +48,6 @@ void *get_in_addr(struct sockaddr *sa) {
 int main(int argc, char *argv[])
 {
 	int sockfd;  
-	char buf[MAXDATASIZE];
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 	char s[INET6_ADDRSTRLEN];
@@ -96,10 +94,12 @@ int main(int argc, char *argv[])
 
 	freeaddrinfo(servinfo); // all done with this structure
 
-  printf("Weather checking application\n");
-  printf("Please input one of: Monday, Tuesday, Wednesday, " \
-    "Thursday, Friday, Saturaday, and Sunday\n");
-  printf("Enter exit to terminate\n");
+  printf("--------------------------------------\n"
+        "|        Weekly Weather Query        |\n"
+        "|Usage:                              |\n"
+        "|  $ <Mon|Tue|Wed|Thu|Fri|Sat|Sun>   |\n"
+        "|Enter exit to quit                  |\n"
+        "--------------------------------------\n");
 
   client_sender(sockfd);
   close(sockfd);
