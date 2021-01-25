@@ -11,32 +11,29 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+// #include "network.h"
+
 #define PORT "30001"
 #define BACKLOG 10
 #define LEN_MAX 1024
 
-char *weather_lst[7] = {
-"Monday's Weather:    Blizzard        Intensity: I", 
-"Tuesday's Weather:   Comet Strike    Intensity: II", 
-"Wednesday's Weather: Drought         Intensity: III", 
-"Thursday's Weather:  Comet Strike    Intensity: IV", 
-"Friday's Weather:    Drought         Intensity: V", 
-"Saturday's Weather:  Flood           Intensity: VI", 
-"Sunday's Weather:    Meteor Shower   Intensity: VII", 
-};
+void client_sender(int client_sockfd, int server_sockfd) {
+  char receive[LEN_MAX];
 
-char *date[7] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+  for (int i = 0; i < 10; i++) { 
+    // receive from client
+    bzero(receive, sizeof receive);
+    recv(server_sockfd, receive, sizeof receive, 0);
+    printf("From client: %s\n", receive);
+    
+    // send to the server and get the response form server
+    send(client_sockfd, receive, strlen(receive), 0);
+    bzero(receive, sizeof receive);
+    recv(client_sockfd, receive, sizeof receive, 0);
 
-char *server_weather_response(char msg[]) {
-  size_t n = strlen(msg);
-  if (*msg && msg[n - 1] == '\n') 
-    msg[n - 1] = '\0';
-
-  for (int i = 0; i < 7; i++) {
-    if (strcmp(date[i], msg) == 0)
-      return weather_lst[i];
-  }
-  return "Error: invalid input";
+    // send back to the client
+    send(server_sockfd, receive, strlen(receive), 0);
+  } 
 }
 
 // get sockaddr, IPv4 or IPv6:
@@ -48,25 +45,6 @@ void *get_in_addr(struct sockaddr *sa) {
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-void listener(int sockfd) {
-  char buff[LEN_MAX]; 
-  char *response;
-
-  while (1) { 
-    bzero(buff, sizeof buff);
-    recv(sockfd, buff, sizeof buff, 0); 
-    printf("From client: %s\n", buff); 
-
-    if (strncmp("exit", buff, 4) == 0) {
-      send(sockfd, "disconnect", 10 + 1, 0);
-      printf("Server exit\n");
-      break;
-    } 
-    response = server_weather_response(buff);
-    send(sockfd, response, strlen(response), 0); 
-  } 
-}
-
 void sigchld_handler(int s) {
 	(void)s;
 	int saved_errno = errno;
@@ -75,7 +53,7 @@ void sigchld_handler(int s) {
 }
 
 int main(int argc, char *argv[]) {
-	int sockfd, new_fd; 
+	int server_sockfd, client_sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	struct sockaddr_storage their_addr;
 	socklen_t sin_size;
@@ -85,7 +63,6 @@ int main(int argc, char *argv[]) {
   
   char s[INET6_ADDRSTRLEN];
 
-  int client_sockfd;
   struct addrinfo client_hints, *client_serverinfo, *client_p;
   int client_rv;
 
@@ -138,20 +115,20 @@ int main(int argc, char *argv[]) {
 
 	// loop through all the results and bind to the first we can
 	for(p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype,
+		if ((server_sockfd = socket(p->ai_family, p->ai_socktype,
 				p->ai_protocol)) == -1) {
 			perror("server: socket");
 			continue;
 		}
 
-		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
+		if (setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
 				sizeof(int)) == -1) {
 			perror("setsockopt");
 			exit(1);
 		}
 
-		if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(sockfd);
+		if (bind(server_sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+			close(server_sockfd);
 			perror("server: bind");
 			continue;
 		}
@@ -162,11 +139,11 @@ int main(int argc, char *argv[]) {
 	freeaddrinfo(servinfo); // all done with this structure
 
 	if (p == NULL)  {
-		fprintf(stderr, "server: failed to bind\n");
+		fprintf(stderr, "proxy: failed to bind\n");
 		exit(1);
 	}
 
-	if (listen(sockfd, BACKLOG) == -1) {
+	if (listen(server_sockfd, BACKLOG) == -1) {
 		perror("listen");
 		exit(1);
 	}
@@ -175,23 +152,25 @@ int main(int argc, char *argv[]) {
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-    printf("server: sigaction failed\n");
+    printf("proxy: sigaction failed\n");
 		exit(1);
 	}
 
-	printf("server: waiting for connections...\n");
+	printf("proxy: waiting for connections...\n");
 
 	sin_size = sizeof their_addr;
-	new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+	server_sockfd = accept(server_sockfd, (struct sockaddr *)&their_addr, &sin_size);
 
-	if (new_fd == -1) {
-    printf("server: accept failed\n");
+	if (server_sockfd == -1) {
+    printf("proxy: accept failed\n");
 		exit(0);
 	} else {
-		printf("server: accepted the client.\n");
+		printf("proxy: accepted the client.\n");
 	}
 
-  listener(new_fd);
-	close(new_fd);
+  client_sender(client_sockfd, server_sockfd);
+
+	close(server_sockfd);
+  close(client_sockfd);
 	return 0;
 }
