@@ -39,7 +39,7 @@ char *server_weather_response(char msg[]) {
   return "Error: invalid input";
 }
 
-void listener(int sockfd) {
+void server_receiver(int sockfd) {
   char buff[LEN_MAX]; 
   char *response;
 
@@ -52,20 +52,9 @@ void listener(int sockfd) {
       send(sockfd, "disconnect", 10 + 1, 0);
       printf("Server exit\n");
       break;
-    } else if (strncmp("all", buff, 3) == 0) {
-      char all_msg[] = "";
-      for (int i = 0; i < 7; i++) {
-        strcat(all_msg, date[i]);
-        strcat(all_msg, ": ");
-        strcat(all_msg, weather_lst[i]);
-        if (i != 6) 
-          strcat(all_msg, "\n");
-      }
-      send(sockfd, all_msg, LEN_MAX, 0);
-    } else {
-      response = server_weather_response(buff);
-      send(sockfd, response, strlen(response), 0); 
-    }
+    } 
+    response = server_weather_response(buff);
+    send(sockfd, response, strlen(response), 0); 
   } 
 }
 
@@ -154,7 +143,7 @@ int main(void) {
 		printf("server: accepted the connection.\n");
 	}
 
-  listener(new_fd);
+  server_receiver(new_fd);
 	close(new_fd);
 	return 0;
 }

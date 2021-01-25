@@ -11,30 +11,50 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-// #include "network.h"
-
 #define PORT "30001"
 #define BACKLOG 10
 #define LEN_MAX 1024
 
+char *day[7] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+
 void proxy_transmitting(int client_sockfd, int server_sockfd) {
-  char msg[LEN_MAX];
+  char msg[LEN_MAX] = "";
 
   while (1) { 
     // receive message from client
     bzero(msg, sizeof msg);
     recv(server_sockfd, msg, sizeof msg, 0);
+
+    // If the proxy server received "exit" token, send both termation tokens to 
+    // the server and client. Finally, terminate the proxy server.  
     if ((strncmp(msg, "exit", 4)) == 0) {
       send(client_sockfd, "exit", 4, 0);
       send(server_sockfd, "disconnect", 10 + 1, 0);
       printf("Proxy exit\n");
       break;
     }
-    // send to the server and get the response form server
-    send(client_sockfd, msg, strlen(msg), 0);
-    bzero(msg, sizeof msg);
-    recv(client_sockfd, msg, sizeof msg, 0);
-
+    // The proxy will make a sequence of seven requests to the
+    // actual server for all command. 
+    if ((strncmp(msg, "all", 3)) == 0) {
+      bzero(msg, sizeof msg);
+      char temp[LEN_MAX] = "";
+      for (int i = 0; i < 7; i++) {
+        send(client_sockfd, day[i], 3, 0);
+        bzero(temp, sizeof temp);
+        recv(client_sockfd, temp, sizeof temp, 0);
+        // Formatting
+        strcat(msg, day[i]);
+        strcat(msg, ": ");
+        strcat(msg, temp);
+        if (i != 6) 
+          strcat(msg, "\n");
+      }
+    } else {
+      // send to the server and get the response form server
+      send(client_sockfd, msg, strlen(msg), 0);
+      bzero(msg, sizeof msg);
+      recv(client_sockfd, msg, sizeof msg, 0);
+    }
     // send back to the client
     send(server_sockfd, msg, strlen(msg), 0);
   } 
