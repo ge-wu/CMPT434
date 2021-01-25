@@ -16,13 +16,13 @@
 #define LEN_MAX 1024
 
 char *weather_lst[7] = {
-"Monday's Weather:    Blizzard        Intensity: I", 
-"Tuesday's Weather:   Comet Strike    Intensity: II", 
-"Wednesday's Weather: Drought         Intensity: III", 
-"Thursday's Weather:  Comet Strike    Intensity: IV", 
-"Friday's Weather:    Drought         Intensity: V", 
-"Saturday's Weather:  Flood           Intensity: VI", 
-"Sunday's Weather:    Meteor Shower   Intensity: VII", 
+"Blizzard", 
+"Comet Strike", 
+"Drought", 
+"Comet Strike", 
+"Drought", 
+"Flood", 
+"Meteor Shower", 
 };
 
 char *date[7] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
@@ -52,9 +52,20 @@ void listener(int sockfd) {
       send(sockfd, "disconnect", 10 + 1, 0);
       printf("Server exit\n");
       break;
-    } 
-    response = server_weather_response(buff);
-    send(sockfd, response, strlen(response), 0); 
+    } else if (strncmp("all", buff, 3) == 0) {
+      char all_msg[] = "";
+      for (int i = 0; i < 7; i++) {
+        strcat(all_msg, date[i]);
+        strcat(all_msg, ": ");
+        strcat(all_msg, weather_lst[i]);
+        if (i != 6) 
+          strcat(all_msg, "\n");
+      }
+      send(sockfd, all_msg, LEN_MAX, 0);
+    } else {
+      response = server_weather_response(buff);
+      send(sockfd, response, strlen(response), 0); 
+    }
   } 
 }
 

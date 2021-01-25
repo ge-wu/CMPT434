@@ -97,7 +97,8 @@ int main(int argc, char *argv[])
         "|        Weekly Weather Query        |\n"
         "|Usage:                              |\n"
         "|  $ <Mon|Tue|Wed|Thu|Fri|Sat|Sun>   |\n"
-        "|Enter exit to quit                  |\n"
+        "|<all> to check the weather list     |\n"
+        "|Enter <exit> to quit                |\n"
         "--------------------------------------\n");
 
   client_sender(sockfd);

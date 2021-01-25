@@ -17,22 +17,26 @@
 #define BACKLOG 10
 #define LEN_MAX 1024
 
-void client_sender(int client_sockfd, int server_sockfd) {
-  char receive[LEN_MAX];
+void proxy_transmitting(int client_sockfd, int server_sockfd) {
+  char msg[LEN_MAX];
 
-  for (int i = 0; i < 10; i++) { 
-    // receive from client
-    bzero(receive, sizeof receive);
-    recv(server_sockfd, receive, sizeof receive, 0);
-    printf("From client: %s\n", receive);
-    
+  while (1) { 
+    // receive message from client
+    bzero(msg, sizeof msg);
+    recv(server_sockfd, msg, sizeof msg, 0);
+    if ((strncmp(msg, "exit", 4)) == 0) {
+      send(client_sockfd, "exit", 4, 0);
+      send(server_sockfd, "disconnect", 10 + 1, 0);
+      printf("Proxy exit\n");
+      break;
+    }
     // send to the server and get the response form server
-    send(client_sockfd, receive, strlen(receive), 0);
-    bzero(receive, sizeof receive);
-    recv(client_sockfd, receive, sizeof receive, 0);
+    send(client_sockfd, msg, strlen(msg), 0);
+    bzero(msg, sizeof msg);
+    recv(client_sockfd, msg, sizeof msg, 0);
 
     // send back to the client
-    send(server_sockfd, receive, strlen(receive), 0);
+    send(server_sockfd, msg, strlen(msg), 0);
   } 
 }
 
@@ -168,7 +172,7 @@ int main(int argc, char *argv[]) {
 		printf("proxy: accepted the client.\n");
 	}
 
-  client_sender(client_sockfd, server_sockfd);
+  proxy_transmitting(client_sockfd, server_sockfd);
 
 	close(server_sockfd);
   close(client_sockfd);
