@@ -1,7 +1,6 @@
 /*
 ** talker.c -- a datagram "client" demo
 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,6 +11,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+
+#define MAX_LEN 1024
 
 
 int main(int argc, char *argv[])
@@ -51,19 +52,22 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 
-	if (sendto(sockfd, argv[2], strlen(argv[2]), 0,
-			 p->ai_addr, p->ai_addrlen) == -1) {
-		perror("talker: sendto");
-		exit(1);
-	}
+  char buf[MAX_LEN];
+  while (1) {
+    printf("$ ");
+    scanf("%s", buf);
 
-  char buf[1024];
-  numbytes = recvfrom(sockfd, buf, 1024 - 1, 0, 
-    p->ai_addr, &p->ai_addrlen);
+    if (sendto(sockfd, buf, MAX_LEN - 1, 0, p->ai_addr, p->ai_addrlen) == -1) {
+      perror("talker: sendto");
+      exit(1);
+    }
+
+    bzero(buf, sizeof buf);
+    numbytes = recvfrom(sockfd, buf, MAX_LEN - 1, 0, p->ai_addr, &p->ai_addrlen);
+    printf("Client received: %s\n", buf);
+  }
 
 	freeaddrinfo(servinfo);
-
-	printf("talker: sent %d bytes to %s\n", numbytes, buf);
 	close(sockfd);
 
 	return 0;
