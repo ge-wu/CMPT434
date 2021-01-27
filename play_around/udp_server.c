@@ -1,3 +1,7 @@
+/*
+** listener.c -- a datagram sockets "server" demo
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -9,7 +13,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define PORT "30003"	// the port users will be connecting to
+#define MYPORT "30003"	// the port users will be connecting to
 
 #define MAXBUFLEN 100
 
@@ -39,7 +43,7 @@ int main(void)
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
 
-	if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
+	if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return 1;
 	}
@@ -84,6 +88,12 @@ int main(void)
 	printf("listener: packet is %d bytes long\n", numbytes);
 	buf[numbytes] = '\0';
 	printf("listener: packet contains \"%s\"\n", buf);
+
+  if (sendto(sockfd, "hello", 5, 0, (struct sockaddr *)&their_addr, addr_len) == -1) {
+    perror("UDP server: sendto");
+    exit(1);
+  }
+  printf("Hello message sent.\n");
 
 	close(sockfd);
 
