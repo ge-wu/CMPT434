@@ -41,10 +41,11 @@ void send_tcp_message(int sockfd) {
     recv(sockfd, buf, sizeof buf, 0);
     if ((strncmp(buf, "disconnect", 10)) == 0) {
       printf("TCP client exit\n");
-      return;
+      break;
     }
     printf("%s\n", buf);
   }
+  close(sockfd);
 }
 
 void response_tcp_server(int sockfd) {
@@ -64,6 +65,7 @@ void response_tcp_server(int sockfd) {
     response = get_weather(buff);
     send(sockfd, response, strlen(response), 0); 
   } 
+  close(sockfd);
 }
 
 void send_udp_message(int sockfd, struct addrinfo *p) {
@@ -227,21 +229,11 @@ int tcp_client(char* hostname, char* port) {
     return 2;
   }  
   freeaddrinfo(serverinfo);
-
-  printf("--------------------------------------\n"
-      "|        Weekly Weather Query        |\n"
-      "|Usage:                              |\n"
-      "|  $ <Mon|Tue|Wed|Thu|Fri|Sat|Sun>   |\n"
-      "|<all> to check the weather list     |\n"
-      "|Enter <exit> to quit                |\n"
-      "--------------------------------------\n");
-  send_tcp_message(sockfd);
-  close(sockfd);
-
-  return 0;
+  return sockfd;
 }
 
-int tcp_server() {
+/* TCP server socket generator */
+int tcp_server_socket_gen(char* port) {
 	int sockfd, new_fd; 
 	struct addrinfo hints, *servinfo, *p;
 	struct sockaddr_storage their_addr; 
@@ -254,7 +246,7 @@ int tcp_server() {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE; // use my IP
 
-	if ((rv = getaddrinfo(NULL, TCP_PORT, &hints, &servinfo)) != 0) {
+	if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return 1;
 	}
@@ -303,10 +295,6 @@ int tcp_server() {
 		exit(0);
 	} else {
 		printf("server: accepted the connection.\n");
-	}
-
-  response_tcp_server(new_fd);
-	close(new_fd);
-	return 0;
+  }
+  return new_fd;
 }
-

@@ -22,5 +22,12 @@ int udp_listener();
 int tcp_server();
 int tcp_client(char*, char*);
 
+int tcp_server_socket_gen(char*);
+int tcp_client_socket_gen(char* , char*);
+
+int udp_server_socket_gen(char*);
+int udp_client_socket_gen(char*, char*);
+
+
 #endif
 
