@@ -2,11 +2,17 @@
 #define _NETWORK_H
 
 #include <unistd.h>
+
 #include <errno.h>
+
 #include <sys/types.h>
+
 #include <sys/socket.h>
+
 #include <netinet/in.h>
+
 #include <arpa/inet.h>
+
 #include <netdb.h>
 
 #define MSG_LEN 1024
@@ -16,18 +22,12 @@
 #define TCP_PORT "30002"
 #define UDP_PORT "30003"
 
-int udp_talker(char*, char*);
-int udp_listener();
+int get_udp_client_socket();
 
-int tcp_server();
-int tcp_client(char*, char*);
+int get_udp_server_socket();
 
-int tcp_server_socket_gen(char*);
-int tcp_client_socket_gen(char* , char*);
+int get_tcp_server_socket();
 
-int udp_server_socket_gen(char*);
-int udp_client_socket_gen(char*, char*);
-
+int get_tcp_client_socket(char * , char * );
 
 #endif
-

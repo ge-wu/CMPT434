@@ -41,46 +41,6 @@ void udp_listener(int socket) {
   }
 }
 
-int get_udp_server_socket() {
-  int sockfd, rv;
-  struct addrinfo hints;
-  struct addrinfo * serverinfo, * p;
-
-  memset( & hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC; // Allow IPv4 or IPv6
-  hints.ai_socktype = SOCK_DGRAM; // Datagram socket
-  hints.ai_flags = AI_PASSIVE; // For wildcard IP address
-
-  rv = getaddrinfo(NULL, UDP_PORT, & hints, & serverinfo);
-  if (rv != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    exit(EXIT_FAILURE);
-  }
-
-  // getaddrinfo() will return a list of address structures. 
-  // Loop through all the result and make a socket. 
-  for (p = serverinfo; p != NULL; p = p -> ai_next) {
-    sockfd = socket(p -> ai_family, p -> ai_socktype, p -> ai_protocol);
-    if (sockfd == -1) {
-      perror("UDP server: socket");
-      continue;
-    }
-    // Success binded. 
-    if (bind(sockfd, p -> ai_addr, p -> ai_addrlen) == 0) {
-      break;
-    }
-    close(sockfd);
-  }
-  // No address succeeded. 
-  if (p == NULL) {
-    fprintf(stderr, "UDP server: failed to bind socket\n");
-    exit(EXIT_FAILURE);
-  }
-  // No longer need;
-  freeaddrinfo(serverinfo);
-  return sockfd;
-}
-
 int main(int argc, char * argv[]) {
   int socket;
 
@@ -92,5 +52,6 @@ int main(int argc, char * argv[]) {
   socket = get_udp_server_socket();
   printf("UDP server is now listening...\n");
   udp_listener(socket);
+  close(socket);
   return 0;
 }
