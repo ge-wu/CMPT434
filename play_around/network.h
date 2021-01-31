@@ -22,11 +22,11 @@
 #define TCP_PORT "30002"
 #define UDP_PORT "30003"
 
-int get_udp_client_socket();
+int get_udp_server_socket(char * );
 
-int get_udp_server_socket();
+int get_tcp_server_socket(char * );
 
-int get_tcp_server_socket();
+int get_udp_client_socket(char * , char * );
 
 int get_tcp_client_socket(char * , char * );
 

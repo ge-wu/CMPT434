@@ -18,7 +18,7 @@ void tcp_listener(int sockfd) {
 }
 
 int main(int argc, char * argv[]) {
-  int sockfd, new_fd;
+  int sockfd;
   struct sockaddr_storage their_addr;
   socklen_t sin_size;
 
@@ -27,7 +27,7 @@ int main(int argc, char * argv[]) {
     exit(1);
   }
 
-  sockfd = get_tcp_server_socket();
+  sockfd = get_tcp_server_socket(TCP_PORT);
 
   // Check if the server is ready to listen and verification. 
   if (listen(sockfd, BACKLOG) == -1) {
@@ -35,14 +35,15 @@ int main(int argc, char * argv[]) {
     exit(EXIT_FAILURE);
   }
   printf("TCP server waiting for connection...\n");
+  // Accept the connection
   sin_size = sizeof their_addr;
-  new_fd = accept(sockfd, (struct sockaddr * ) & their_addr, & sin_size);
-  if (new_fd == -1) {
+  sockfd = accept(sockfd, (struct sockaddr * ) & their_addr, & sin_size);
+  if (sockfd == -1) {
     perror("TCP server: accept");
     exit(EXIT_FAILURE);
   }
 
-  tcp_listener(new_fd);
-  close(new_fd);
+  tcp_listener(sockfd);
+  close(sockfd);
   return 0;
 }
