@@ -19,9 +19,9 @@ Please check the design documentation for more detail and testing.
 
 
 ### Usage
-Change the directory to the program directory and run 
+In the terminal, change the directory to the program directory and run 
 `make`. Four executable file should be generated: `tcp_server, udp_server, `
-`proxy_server,` and `tcp_client`. 
+`proxy,` and `tcp_client`. Finally, make sure you have Internet connection.
 
 #### Question 1
 We need two terminals for this part. Run ```./tcp_server``` to start the TCP 
@@ -47,9 +47,13 @@ seven responses with a header, and send back to the client.
 ### Remarks
 - The command must be single one word, without space. i.e. `Mon`, `Tue`, etc,...
 `Mon Tue` works, but will not work as expected.
-- Don't use client to connect to the TCP server if the proxy server 
+- Do not use client to connect to the TCP server if the proxy server 
 is already connecting to the TCP server.  
-- Don't connect the UDP server with TCP client. 
+- Do not connect the UDP server with TCP client. 
+- Terminate all the running server(s) and client and then restart. For example, 
+TCP client, proxy server, and TCP server are running. Do not terminate the TCP
+server and run the UDP server, because TCP client and the proxy server will 
+also be terminated. 
 
 ## Part 2
 Please check `cmpt434_asgmt_1_part2.pdf`. 
