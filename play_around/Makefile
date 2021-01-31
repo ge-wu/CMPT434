@@ -5,7 +5,6 @@ CC = gcc
 CFLAGS = -g
 CPPFLAGS = -Wall -pedantic 
 
-# EXE = udp_server tcp_client tcp_server proxy_server
 EXE = udp_server tcp_server tcp_client proxy
 
 
@@ -13,12 +12,13 @@ EXE = udp_server tcp_server tcp_client proxy
 
 all: $(EXE)
 
-udp_server: udp_server.c network.o
 tcp_client: tcp_client.c network.o
-tcp_server: tcp_server.c network.o
-proxy: proxy.c network.o
+udp_server: udp_server.c network.o cmd_processor.o
+tcp_server: tcp_server.c network.o cmd_processor.o
+proxy: proxy.c network.o cmd_processor.o
 
 network.o: network.c network.h 
+cmd_processor.o: cmd_processor.c cmd_processor.h
 
 clean:
 	$(RM) *.o $(EXE)

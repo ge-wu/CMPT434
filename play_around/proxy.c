@@ -4,20 +4,45 @@
 
 #include "network.h"
 
+#include "cmd_processor.h"
+
+
 void proxy_transmittor(int client_socket, int server_socket) {
   char buf[MSG_LEN];
+  char temp[MSG_LEN];
 
   for (;;) {
     // Receive data from the client. 
     bzero(buf, sizeof buf);
     recv(server_socket, buf, MSG_LEN, 0);
+    printf("From client: %s\n", buf);
 
-    // Send the data from the client to the UDP/TCP server and 
-    // get the server responses
-    write(client_socket, buf, strlen(buf));
-    bzero(buf, sizeof buf);
-    read(client_socket, buf, MSG_LEN);
-
+    // [all] command only for the proxy server. It will send seven request to 
+    // the UDP/TCP server, and concatenation seven responses. Finally, send back 
+    // to the client. Without the proxy, [all] will be treated as invalid.
+    if (strncmp(buf, "all", 3) == 0) {
+      bzero(buf, sizeof buf);
+      for (int i = 0; i < 7; i++) {
+        write(client_socket, day[i], 3);
+        bzero(temp, sizeof temp);
+        read(client_socket, temp, MSG_LEN);
+        // Formatting
+        strcat(buf, day[i]);
+        strcat(buf, ": ");
+        strcat(buf, temp);
+        // Add new line character if it is not last request response's message. 
+        if (i != 6) {
+          strcat(buf, "\n");
+        }
+      }
+    } else {
+      // Send the data from the client to the UDP/TCP server and 
+      // get the server responses
+      write(client_socket, buf, strlen(buf));
+      bzero(buf, sizeof buf);
+      read(client_socket, buf, MSG_LEN);
+    }
+    printf("From server: %s\n", buf);
     // Send back to the client
     send(server_socket, buf, MSG_LEN, 0);
   }

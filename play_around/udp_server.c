@@ -6,37 +6,27 @@
 
 #include "network.h"
 
+#include "cmd_processor.h"
+
 // Read datagram and send back corresponding weather information. 
 void udp_listener(int socket) {
-  int s;
   struct sockaddr_storage addr;
   socklen_t addr_len;
-  ssize_t numbytes;
   char buf[MSG_LEN];
+  const char * response;
 
   for (;;) {
     addr_len = sizeof(struct sockaddr_storage);
-    numbytes = recvfrom(
-      socket, buf, MSG_LEN, 0, (struct sockaddr * ) & addr, & addr_len
-    );
-    // Ignore failed request
-    if (numbytes == -1) {
-      continue;
-    }
+    recvfrom(socket, buf, MSG_LEN, 0, (struct sockaddr * ) & addr, & addr_len);
 
-    char host[NI_MAXHOST], service[NI_MAXSERV];
-    s = getnameinfo(
-      (struct sockaddr * ) & addr, addr_len,
-      host, NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV
-    );
+    response = get_weather(buf);
+    printf("Received: %s\n", buf);
+    printf("    Sent: %s\n", response);
 
-    if (s == 0) {
-      printf("Received %zd bytes from %s:%s\n", numbytes, host, service);
-    }
-    if (sendto(
-        socket, buf, numbytes, 0, (struct sockaddr * ) & addr, addr_len
-      ) != numbytes) {
-      fprintf(stderr, "Error sending response\n");
+    sendto(socket, response, MSG_LEN, 0, (struct sockaddr * ) & addr, addr_len);
+    if (strncmp(buf, "quit", 4) == 0) {
+      printf("UDP server exit...\n");
+      break;
     }
   }
 }

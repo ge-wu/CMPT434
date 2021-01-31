@@ -16,7 +16,7 @@ void tcp_listener(int sockfd) {
     bzero(buf, MSG_LEN);
     recv(sockfd, buf, sizeof buf, 0); // Receive message from the client
 
-    response = process_cmd(buf);
+    response = get_weather(buf);
     printf("Received: %s\n", buf);
     printf("    Sent: %s\n", response);
 
