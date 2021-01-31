@@ -19,6 +19,11 @@ void tcp_talker(int socket) {
     send(socket, buf, MSG_LEN, 0);
     bzero(buf, MSG_LEN);
     recv(socket, buf, MSG_LEN, 0);
+
+    if (strncmp(buf, "exit", 4) == 0) {
+      printf("TCP client exit...\n");
+      break;
+    } 
     printf("%s\n", buf);
   }
 }
@@ -36,7 +41,7 @@ int main(int argc, char * argv[]) {
     "|Usage:                              |\n"
     "|  $ <Mon|Tue|Wed|Thu|Fri|Sat|Sun>   |\n"
     "|<all> to check the weather list     |\n"
-    "|Enter <exit> to quit                |\n"
+    "|Enter <quit> to quit                |\n"
     "--------------------------------------\n");
 
   tcp_talker(socket);

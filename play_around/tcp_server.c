@@ -6,14 +6,26 @@
 
 #include "network.h"
 
+#include "cmd_processor.h"
+
 void tcp_listener(int sockfd) {
   char buf[MSG_LEN];
+  const char * response;
 
   for (;;) {
     bzero(buf, MSG_LEN);
-    recv(sockfd, buf, sizeof buf, 0);
-    printf("Received: %s\n \tSent: ", buf);
-    send(sockfd, buf, MSG_LEN, 0);
+    recv(sockfd, buf, sizeof buf, 0); // Receive message from the client
+
+    response = process_cmd(buf);
+    printf("Received: %s\n", buf);
+    printf("    Sent: %s\n", response);
+
+    send(sockfd, response, MSG_LEN, 0);   // Send back server response
+
+    if (strncmp(buf, "quit", 4) == 0) {   // Terminate if client send "quit"
+      printf("TCP server exit...\n");
+      break;
+    }
   }
 }
 
