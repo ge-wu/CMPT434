@@ -31,7 +31,7 @@ void tcp_talker(int socket) {
 int main(int argc, char * argv[]) {
   int socket;
   if (argc != 3) {
-    printf("usage: ./tcp_client $(localhost) PORT\n");
+    printf("usage: ./tcp_client hostname port\n");
     exit(1);
   }
 
