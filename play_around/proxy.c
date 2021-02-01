@@ -38,13 +38,18 @@ void proxy_transmittor(int client_socket, int server_socket) {
     } else {
       // Send the data from the client to the UDP/TCP server and 
       // get the server responses
-      write(client_socket, buf, strlen(buf));
+      write(client_socket, buf, sizeof buf);
       bzero(buf, sizeof buf);
       read(client_socket, buf, MSG_LEN);
     }
     printf("From server: %s\n", buf);
     // Send back to the client
     send(server_socket, buf, MSG_LEN, 0);
+
+    if (strncmp(buf, "exit", 4) == 0) {
+      printf("Proxy exit...\n");
+      break;
+    }
   }
 }
 

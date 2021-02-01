@@ -27,12 +27,17 @@ const char * weather_lst[7] = {
 };
 
 const char* get_weather(char cmd[]) {
-  if (strncmp(cmd, "quit", 4) == 0) {
+  size_t len = strlen(cmd) - 1;
+  if (*cmd && cmd[len] == '\n') {
+    cmd[len] = '\0';
+  }
+
+  if (strcmp(cmd, "quit") == 0) {
     return "exit";
   }
 
   for (int i = 0; i < 7; i++) {
-    if (strncmp(cmd, day[i], 3) == 0) {
+    if (strcmp(cmd, day[i]) == 0) {
       return weather_lst[i];
     }
   }

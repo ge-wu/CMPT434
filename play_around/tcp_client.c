@@ -12,8 +12,8 @@ void tcp_talker(int socket) {
     printf("> ");
     scanf("%s", buf);
 
-    if (strlen(buf) + 1 > MSG_LEN) {
-      printf("Error: message is too long\n");
+    if (strlen(buf) + 1 > 5) {
+      printf("Error: command too long\n");
       continue;
     }
     send(socket, buf, MSG_LEN, 0);
