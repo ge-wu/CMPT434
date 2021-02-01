@@ -18,10 +18,17 @@ with the client and TCP or UDP with the server depend on the port.
 Please check the design documentation for more detail and testing. 
 
 
-### Usage
-In the terminal, change the directory to the program directory and run 
+### Prerequisite
+
+Open a Linux terminal, change the directory to the program directory and run 
 `make`. Four executable file should be generated: `tcp_server, udp_server, `
-`proxy,` and `tcp_client`. Finally, make sure you have Internet connection.
+`proxy,` and `tcp_client`. 
+
+Use `hostname`, `hostnamectl`, or `cat /proc/sys/kernel/hostname` to check the 
+hostname of your machine. This application is developed on `tux8`, which will
+guarantee work with hostname `tux8`. 
+
+Finally, make sure you have Internet connection.
 
 #### Question 1
 We need two terminals for this part. Run ```./tcp_server``` to start the TCP 
