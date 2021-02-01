@@ -1,4 +1,3 @@
-# CMPT 434 Assignment 1 Part A
 # Jiaye Wang jiw561 11231145
 
 CC = gcc

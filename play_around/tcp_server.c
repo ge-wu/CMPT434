@@ -1,3 +1,5 @@
+// Jiaye Wang jiw561 11231145
+
 #include <stdio.h>
 
 #include <stdlib.h>
@@ -20,9 +22,9 @@ void tcp_listener(int sockfd) {
     printf("Received: %s\n", buf);
     printf("    Sent: %s\n", response);
 
-    send(sockfd, response, MSG_LEN, 0);   // Send back server response
+    send(sockfd, response, MSG_LEN, 0); // Send back server response
 
-    if (strncmp(buf, "quit", 4) == 0) {   // Terminate if client send "quit"
+    if (strncmp(buf, "quit", 4) == 0) { // Terminate if client send "quit"
       printf("TCP server exit...\n");
       break;
     }

@@ -1,3 +1,5 @@
+// Jiaye Wang jiw561 11231145
+
 #include <stdio.h>
 
 #include <stdlib.h>
@@ -23,7 +25,7 @@ void tcp_talker(int socket) {
     if (strncmp(buf, "exit", 4) == 0) {
       printf("TCP client exit...\n");
       break;
-    } 
+    }
     printf("%s\n", buf);
   }
 }

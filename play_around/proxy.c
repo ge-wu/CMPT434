@@ -1,5 +1,9 @@
+// Jiaye Wang jiw561 11231145
+
 #include <stdio.h>
+
 #include <stdlib.h>
+
 #include <string.h>
 
 #include "network.h"
@@ -53,7 +57,6 @@ void proxy_transmittor(int client_socket, int server_socket) {
   }
 }
 
-
 int main(int argc, char * argv[]) {
   int server_socket, client_socket;
   struct sockaddr_storage their_addr;
@@ -69,9 +72,9 @@ int main(int argc, char * argv[]) {
   // when communicating with the client and UDP when communicating with the 
   // server. Hence, the proxy's server will always be TCP server. 
   server_socket = get_tcp_server_socket(PROXY_PORT);
-  if (strncmp(argv[2], "30002", 5) == 0) {  // Connect to the TCP server
+  if (strncmp(argv[2], "30002", 5) == 0) { // Connect to the TCP server
     client_socket = get_tcp_client_socket(argv[1], argv[2]);
-  } else if (strncmp(argv[2], "30003", 5) == 0) {  // Connect to the UDP server. 
+  } else if (strncmp(argv[2], "30003", 5) == 0) { // Connect to the UDP server. 
     client_socket = get_udp_client_socket(argv[1], argv[2]);
   } else {
     printf("Error: incorrect port. Currently only support 30002 and 30003");

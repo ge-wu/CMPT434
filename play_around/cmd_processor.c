@@ -1,3 +1,5 @@
+// Jiaye Wang jiw561 11231145
+
 #include <stdio.h>
 
 #include <stdlib.h>
@@ -26,9 +28,9 @@ const char * weather_lst[7] = {
   "Meteor Shower",
 };
 
-const char* get_weather(char cmd[]) {
+const char * get_weather(char cmd[]) {
   size_t len = strlen(cmd) - 1;
-  if (*cmd && cmd[len] == '\n') {
+  if ( * cmd && cmd[len] == '\n') {
     cmd[len] = '\0';
   }
 

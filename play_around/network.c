@@ -1,20 +1,24 @@
+// Jiaye Wang jiw561 11231145
+
 #include <stdio.h>
+
 #include <stdlib.h>
+
 #include <string.h>
 
 #include "network.h"
 
 
-int get_tcp_client_socket(char* hostname, char* port) {
+int get_tcp_client_socket(char * hostname, char * port) {
   struct addrinfo hints;
-  struct addrinfo *serverinfo, *p;
+  struct addrinfo * serverinfo, * p;
   int sockfd, rv;
 
-  memset(&hints, 0, sizeof hints);
+  memset( & hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC; // Allow IPv4 or IPv6
   hints.ai_socktype = SOCK_STREAM; // Stream socket;
 
-  rv = getaddrinfo(hostname, port, &hints, &serverinfo);
+  rv = getaddrinfo(hostname, port, & hints, & serverinfo);
   if (rv != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
     exit(EXIT_FAILURE);
@@ -22,13 +26,13 @@ int get_tcp_client_socket(char* hostname, char* port) {
 
   // getaddrinfo() will return a list of address structures. 
   // Loop through all the result and make a socket. 
-  for (p = serverinfo; p != NULL; p = p->ai_next) {
-    sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+  for (p = serverinfo; p != NULL; p = p -> ai_next) {
+    sockfd = socket(p -> ai_family, p -> ai_socktype, p -> ai_protocol);
     if (sockfd == -1) {
       perror("TCP client: socket");
       continue;
     }
-    if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+    if (connect(sockfd, p -> ai_addr, p -> ai_addrlen) == -1) {
       close(sockfd);
       perror("TCP client: connect");
       continue;
@@ -132,31 +136,31 @@ int get_udp_server_socket(char * port) {
   return sockfd;
 }
 
-int get_udp_client_socket(char* hostname, char* port) {
+int get_udp_client_socket(char * hostname, char * port) {
   struct addrinfo hints;
-  struct addrinfo *serverinfo, *p;
+  struct addrinfo * serverinfo, * p;
   int sockfd, rv;
 
   // Obtain address(es) matching host/port
-  memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC;      // Allow IPv4 or IPv6;
-  hints.ai_socktype = SOCK_DGRAM;   // Datagram socket;
+  memset( & hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC; // Allow IPv4 or IPv6;
+  hints.ai_socktype = SOCK_DGRAM; // Datagram socket;
   hints.ai_flags = 0;
 
-  rv = getaddrinfo(hostname, port, &hints, &serverinfo);
+  rv = getaddrinfo(hostname, port, & hints, & serverinfo);
   if (rv != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
     exit(EXIT_FAILURE);
   }
   // getaddrinfo() will return a list of address structures. 
   // Loop through all the result and make a socket. 
-  for (p = serverinfo; p != NULL; p = p->ai_next) {
-    sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+  for (p = serverinfo; p != NULL; p = p -> ai_next) {
+    sockfd = socket(p -> ai_family, p -> ai_socktype, p -> ai_protocol);
     if (sockfd == -1) {
       continue;
     }
     // Success
-    if (connect(sockfd, p->ai_addr, p->ai_addrlen) != -1) {
+    if (connect(sockfd, p -> ai_addr, p -> ai_addrlen) != -1) {
       break;
     }
     close(sockfd);
