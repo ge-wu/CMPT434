@@ -30,7 +30,7 @@ guarantee work with hostname `tux8`.
 
 Finally, make sure you have Internet connection.
 
-#### Question 1
+### Question 1
 We need two terminals for this part. Run ```./tcp_server``` to start the TCP 
 server in one terminal. Then run ```./tcp_client $(hostname) 30002``` in the 
 other terminal. __The server program must run first.__ Now there should be 
@@ -39,7 +39,7 @@ The `all` command will not work without the proxy server. Hence, the actual
 server will treat as invalid command. Use the `quit` command to terminate 
 the application is recommended. 
 
-#### Question 2 & 3
+### Question 2 & 3
 We need three terminals for question 2 and question 3. One for UDP or TCP server, 
 one for the proxy server and one for the client. 
 First run `./tcp_server` or `./udp_server` in one terminal. Then run 

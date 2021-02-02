@@ -43,6 +43,7 @@ int main(int argc, char * argv[]) {
     "|Usage:                              |\n"
     "|  $ <Mon|Tue|Wed|Thu|Fri|Sat|Sun>   |\n"
     "|<all> to check the weather list     |\n"
+    "|  (only when connected to proxy)    |\n"
     "|Enter <quit> to quit                |\n"
     "--------------------------------------\n");
 

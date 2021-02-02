@@ -37,7 +37,7 @@ int main(int argc, char * argv[]) {
   int socket;
 
   if (argc != 1) {
-    printf("usage: ./udp_server");
+    printf("usage: ./udp_server\n");
     exit(1);
   }
 

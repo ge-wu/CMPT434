@@ -37,7 +37,7 @@ int main(int argc, char * argv[]) {
   socklen_t sin_size;
 
   if (argc != 1) {
-    printf("usage: ./tcp_server");
+    printf("usage: ./tcp_server\n");
     exit(1);
   }
 
