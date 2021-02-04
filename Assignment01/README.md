@@ -63,4 +63,4 @@ server and run the UDP server, because TCP client and the proxy server will
 also be terminated. 
 
 ## Part 2
-Please check `cmpt434_asgmt_1_part2.pdf`. 
+Please check `partB.pdf`. 
