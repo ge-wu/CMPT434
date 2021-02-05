@@ -63,5 +63,4 @@ server and run the UDP server, because TCP client and the proxy server will
 also be terminated. 
 
 ## Part 2
-Please check `partB.pdf`. 
-(The writing part will now shown in this repository)
+Please check `partB.pdf` (the writing part will not show in this repository).
