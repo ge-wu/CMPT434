@@ -64,3 +64,4 @@ also be terminated.
 
 ## Part 2
 Please check `partB.pdf`. 
+(The writing part will now shown in this repository)
