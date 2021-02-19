@@ -8,28 +8,48 @@
 
 
 void udp_sender(int socket) {
-  struct sockaddr_storage addr;
-  socklen_t addr_len;
   char buf[MSG_LEN];
 
   for (;;) {
-    addr_len = sizeof(struct sockaddr_storage);
     printf("> ");
     scanf("%s", buf);
 
-    sendto(socket, buf, MSG_LEN, 0, (struct sockaddr *) & addr, addr_len);
-    bzero(buf, MSG_LEN);
-    recvfrom(socket, buf, MSG_LEN, 0, (struct sockaddr * ) & addr, & addr_len);
+    write(socket, buf, sizeof buf);
+    bzero(buf, sizeof buf);
+    read(socket, buf, MSG_LEN);
+    printf("From server: %s\n", buf);
   }
 }
 
 int main(int argc, char * argv[]) {
-  int socket;
   if (argc != 5) {
-    printf("usage: ./sender <IP address> 30000 <window size> <time out>\n");
+    printf("usage: ./sender <IP address> 30000 <window size> <timeout>\n");
     printf("    please check README for more usage detail :)");
     exit(1);
   }
+
+  int socket;
+  int window_size, timeout;
+
+  window_size = atoi(argv[3]);
+  timeout = atoi(argv[4]);
+
+  if (window_size < MIN_WSIZE || window_size > MAX_WSIZE) {
+    printf(
+        "error: window size must between %d to %d\n, inclusive", 
+        MIN_WSIZE, MAX_WSIZE
+        );
+    exit(1);
+  }
+
+  if (timeout < MIN_TIME || timeout > MAX_TIME) {
+    printf(
+        "error: timeout must between %d to %d, inclusive", 
+        MIN_TIME, MAX_TIME
+        );
+    exit(1);
+  }
+
 
   socket = get_udp_client_socket(argv[1], argv[2]);
   udp_sender(socket);

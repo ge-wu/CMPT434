@@ -18,13 +18,17 @@
 #include <netdb.h>
 
 #define MSG_LEN 256
-#define BACKLOG 10
-
 #define PORT "30000"
+
+#define MIN_TIME 1
+#define MAX_TIME 30
+
+#define MIN_WSIZE 1
+#define MAX_WSIZE 31
+
 
 int get_udp_server_socket(char * );
 
 int get_udp_client_socket(char * , char * );
-
 
 #endif
