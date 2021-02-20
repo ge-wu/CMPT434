@@ -14,7 +14,10 @@ all: $(EXE)
 receiver: receiver.c network.o
 sender: sender.c network.o
 
+q_test: q_test.c queue.o
+
 network.o: network.c network.h 
+queue.o: queue.c queue.h
 
 clean:
 	$(RM) *.o $(EXE)
