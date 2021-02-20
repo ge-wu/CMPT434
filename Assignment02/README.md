@@ -8,7 +8,7 @@ easier, such as, the size of the queue is equal to the window size, pop the
 the first element if it got acknowledge and push back again if it did not get,
 etc.
 `q_test.c` includes some simple test cases for the queue. Use `make q_test` and 
-`./q_test` to check the test output. These tests if for my own purpose, 
+`./q_test` to check the test output. These tests are for my own purpose, 
 feel free to ignore :). 
 
 There are plent of way to check IP address on Linux machine. Simply, `hostname -I`, 

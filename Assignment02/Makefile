@@ -11,8 +11,8 @@ EXE = receiver sender
 
 all: $(EXE)
 
-receiver: receiver.c network.o
-sender: sender.c network.o
+receiver: receiver.c network.o queue.o
+sender: sender.c network.o queue.o
 
 q_test: q_test.c queue.o
 
