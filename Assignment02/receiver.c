@@ -39,6 +39,7 @@ int main(int argc, char * argv[]) {
   }
 
   socket = get_udp_server_socket(PORT);
+
   printf("UDP server is now listening...\n");
   udp_listener(socket);
   close(socket);

@@ -8,18 +8,15 @@
 
 
 void udp_sender(int socket) {
-  struct sockaddr_storage addr;
-  socklen_t addr_len;
   char buf[MSG_LEN];
 
   for (;;) {
-    addr_len = sizeof(struct sockaddr_storage);
     printf("> ");
     scanf("%s", buf);
 
-    sendto(socket, buf, MSG_LEN, 0, (struct sockaddr *) & addr, addr_len);
+    write(socket, buf, sizeof buf);
     bzero(buf, MSG_LEN);
-    recvfrom(socket, buf, MSG_LEN, 0, (struct sockaddr * ) & addr, & addr_len);
+    read(socket, buf, sizeof buf);
   }
 }
 
