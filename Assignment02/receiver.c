@@ -1,16 +1,15 @@
 // Jiaye Wang jiw561 11231145
 
 #include <stdio.h>
-
 #include <stdlib.h>
-
 #include <string.h>
 
 #include "network.h"
+#include "queue.h"
 
 
 
-void udp_listener(int socket) {
+void receiver(int socket, int window_size) {
   struct sockaddr_storage addr;
   socklen_t addr_len;
   char ack[MSG_LEN];
@@ -18,45 +17,37 @@ void udp_listener(int socket) {
   char s[INET6_ADDRSTRLEN];
 
   int sequence_num;
+  QUEUE *buffer;
 
+  buffer = create_queue(sizeof(FRAME));
+  sequence_num = 0;
 
   for (;;) {
     addr_len = sizeof(struct sockaddr_storage);
-    // Received from sender
     FRAME frame;
-    if(recvfrom(
-          socket, &frame, sizeof frame, 0, 
-          (struct sockaddr * ) & addr, & addr_len) == -1) {
-      printf("receiver: failed to receive message\n");
-    }
-
+    recvfrom(socket, &frame, sizeof frame, 
+        0, (struct sockaddr * ) & addr, & addr_len);
+    // Parse the message and sequence number from the frame. 
     strcpy(buf, frame.msg);
     sequence_num = frame.sequence_num;
 
-    // Print the IP address of the sender. 
-    printf("receiver: got packet from %s\n", 
-        inet_ntop(
-          addr.ss_family, 
-          get_in_addr((struct sockaddr *) & addr), 
-          s, sizeof s
-        )
-    );
     printf("sequence number: %d\nmessage: %s\n", sequence_num, buf);
+    push(buffer, &frame);
 
     // Ask the receiver to input an ack. 
-    printf("receiver: received message? (Y/N)\n");
+    printf("(R) received message? (Y/N): ");
     if (fgets(ack, sizeof ack, stdin) != NULL) {
       ack[strcspn(ack, "\n")] = 0;
     }
 
     if (ack[0] == 'Y') {
-      printf("receiver: message successfully received\n");
+      sendto(socket, &sequence_num, sizeof(int), 
+          0, (struct sockaddr * ) & addr, addr_len);
+      printf("(R) acknowledge for frame %d sent\n", sequence_num);
     } else {
       printf("receiver: message not successfully received\n");
     }
-
     // Send back the ack to the receiver 
-    sendto(socket, ack, MSG_LEN, 0, (struct sockaddr * ) & addr, addr_len);
   }
 }
 
@@ -81,7 +72,7 @@ int main(int argc, char * argv[]) {
   socket = get_udp_server_socket(PORT);
 
   printf("receiver is now listening...\n");
-  udp_listener(socket);
+  receiver(socket, window_size);
   close(socket);
   return 0;
 }

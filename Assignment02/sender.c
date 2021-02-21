@@ -6,49 +6,44 @@
 #include "queue.h"
 
 
-void udp_sender(int socket, int window_size, int timeout) {
-  QUEUE *q;
-  int cur_sequence_num;
+void sender(int socket, int window_size, int timeout) {
+  QUEUE* buffer;
+  FRAME frame;
+  int base, ack;
   char buf[MSG_LEN];
 
-  q = create_queue(sizeof(FRAME));
-  cur_sequence_num = 0;
+  buffer = create_queue(sizeof(FRAME));
+  base = 0;
 
   for (;;) {
-    while (q->size < window_size) {
-      FRAME frame;
+    // 'If the number of messages that have been sent to the receiver and that 
+    // are still unacknowledged is less than the maximum sending window size, 
+    // the message should also be immediately sent to the receiver. '
+    while (buffer->size < window_size) {
       printf("> ");
       if (fgets(buf, sizeof buf, stdin) != NULL) {
         buf[strcspn(buf, "\n")] = 0;
       }
-
-      frame.sequence_num = cur_sequence_num;
+      // Wrap into a frame. 
+      frame.sequence_num = base;
       strcpy(frame.msg, buf);
-      cur_sequence_num++;
+      printf("(S) frame %d sent\n", base);
 
-      push(q, &frame);
-      /* write(socket, &frame, sizeof frame); */
-    } 
-
-    while (q->size) {
-      FRAME * cur_front;
-      cur_front = front(q);
-      printf("Cur message: %s, Cur sequence_num: %d\n", cur_front->msg, cur_front->sequence_num);
-      pop(q);
+      push(buffer, &frame);
+      write(socket, &frame, sizeof frame);
+      base++;
     }
-
-    /* printf("sender: window size is full. Please wait for ack.\n"); */
-    /* /1* bzero(buf, MSG_LEN); *1/ */
-    /* /1* read(socket, buf, sizeof buf); *1/ */
-
-    /* FRAME * temp = front(q); */
-    /* pop(q); */
-    /* printf("Cur Sequence %d. Window size: %ld\n", temp->sequence_num, q->size); */
-    /* printf("Cur message %s\n", temp->msg); */
-
-    /* if (buf[0] != 'Y') { */
-    /*   push(q, &temp); */
-    /* } */ 
+    while (buffer->size == window_size) {
+      ack = 0;
+      read(socket, &ack, sizeof(int));
+      FRAME* temp;
+      temp = front(buffer);
+      if (temp->sequence_num == ack) {
+        printf("(S) acknowledge for frame %d received\n", temp->sequence_num);
+        pop(buffer);
+      } else {
+      }
+    }
   }
 }
 
@@ -65,6 +60,6 @@ int main(int argc, char * argv[]) {
   timeout = atoi(argv[4]);
 
   socket = get_udp_client_socket(argv[1], argv[2]);
-  udp_sender(socket, window_size, timeout);
+  sender(socket, window_size, timeout);
   close(socket);
 }
