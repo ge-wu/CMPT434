@@ -18,6 +18,7 @@ q_test: q_test.c queue.o
 
 network.o: network.c network.h 
 queue.o: queue.c queue.h
+protocol.o: protocol.c protocol.h
 
 clean:
 	$(RM) *.o $(EXE)

@@ -7,7 +7,7 @@
 #include "network.h"
 #include "queue.h"
 
-
+#define MSG_LEN 1024
 
 void receiver(int socket, int window_size) {
   struct sockaddr_storage addr;
@@ -19,20 +19,20 @@ void receiver(int socket, int window_size) {
   int sequence_num;
   QUEUE *buffer;
 
-  buffer = create_queue(sizeof(FRAME));
+  buffer = create_queue(sizeof(frame));
   sequence_num = 0;
 
   for (;;) {
     addr_len = sizeof(struct sockaddr_storage);
-    FRAME frame;
-    recvfrom(socket, &frame, sizeof frame, 
+    frame f;
+    recvfrom(socket, &f, sizeof f, 
         0, (struct sockaddr * ) & addr, & addr_len);
-    // Parse the message and sequence number from the frame. 
-    strcpy(buf, frame.msg);
-    sequence_num = frame.sequence_num;
+    // Parse the message and sequence number from the f. 
+    strcpy(buf, f.msg);
+    sequence_num = f.seq;
 
     printf("sequence number: %d\nmessage: %s\n", sequence_num, buf);
-    push(buffer, &frame);
+    push(buffer, &f);
 
     // Ask the receiver to input an ack. 
     printf("(R) received message? (Y/N): ");
@@ -41,12 +41,13 @@ void receiver(int socket, int window_size) {
     }
 
     if (ack[0] == 'Y') {
-      sendto(socket, &sequence_num, sizeof(int), 
-          0, (struct sockaddr * ) & addr, addr_len);
-      printf("(R) acknowledge for frame %d sent\n", sequence_num);
+      printf("(R) acknowledge for f %d sent\n", sequence_num);
     } else {
+      sequence_num = -1;
       printf("receiver: message not successfully received\n");
     }
+    sendto(socket, &sequence_num, sizeof(int), 
+        0, (struct sockaddr * ) & addr, addr_len);
     // Send back the ack to the receiver 
   }
 }

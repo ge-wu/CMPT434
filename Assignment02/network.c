@@ -1,12 +1,11 @@
 // Jiaye Wang jiw561 11231145
 
 #include <stdio.h>
-
 #include <stdlib.h>
-
 #include <string.h>
 
 #include "network.h"
+
 
 int get_udp_server_socket(char * port) {
   int sockfd, rv;
