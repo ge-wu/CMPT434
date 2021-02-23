@@ -20,13 +20,19 @@
 #define MIN_WSIZE 1
 #define MAX_WSIZE 7
 
+#define MSG_LEN 128
+
 typedef unsigned int seq_nr;
 typedef enum {data, ack, nak} frame_kind;
 typedef enum {false, true} boolean;
-typedef struct { unsigned char data[MAX_WSIZE]; } packet;
+typedef enum {ready, wait, ack_timeout} event_type;
+
+typedef struct {char data[MSG_LEN];} packet;
 typedef struct {
+  frame_kind kind;
   seq_nr seq; 
-  char msg[128];
+  seq_nr ack;
+  char info[MSG_LEN];
 } frame;
 
 

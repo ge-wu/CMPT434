@@ -7,47 +7,65 @@
 #include "network.h"
 #include "queue.h"
 
-#define MSG_LEN 1024
+boolean no_nak = true;
+int window_size;
 
-void receiver(int socket, int window_size) {
+#define inc(k) if (k < window_size) k = k + 1; else k = 0;
+
+static boolean between(seq_nr a, seq_nr b, seq_nr c) {
+  return ((a <= b) && (b < c)) || ((c < a) && (a <= b)) || ((b < c) && (c < a));
+}
+
+void receiver(int socket) {
   struct sockaddr_storage addr;
   socklen_t addr_len;
-  char ack[MSG_LEN];
   char buf[MSG_LEN];
-  char s[INET6_ADDRSTRLEN];
+  frame f;
+  frame s;
 
-  int sequence_num;
-  QUEUE *buffer;
+  seq_nr too_far;
+  seq_nr frame_expected;
+  boolean arrived[window_size];
 
-  buffer = create_queue(sizeof(frame));
-  sequence_num = 0;
+  for (int i = 0; i < window_size; i++) 
+    arrived[i] = false;
+
+  frame_expected = 0;
+  too_far = window_size;
 
   for (;;) {
+    printf("Cur window range: %d-%d\n", frame_expected, too_far);
     addr_len = sizeof(struct sockaddr_storage);
-    frame f;
-    recvfrom(socket, &f, sizeof f, 
-        0, (struct sockaddr * ) & addr, & addr_len);
+    recvfrom(socket, &f, sizeof f, 0, (struct sockaddr*) &addr, &addr_len);
     // Parse the message and sequence number from the f. 
-    strcpy(buf, f.msg);
-    sequence_num = f.seq;
 
-    printf("sequence number: %d\nmessage: %s\n", sequence_num, buf);
-    push(buffer, &f);
+    printf("sequence number: %d\nmessage: %s\n", f.seq, f.info);
 
     // Ask the receiver to input an ack. 
     printf("(R) received message? (Y/N): ");
-    if (fgets(ack, sizeof ack, stdin) != NULL) {
-      ack[strcspn(ack, "\n")] = 0;
+    if (fgets(buf, sizeof ack, stdin) != NULL) {
+      buf[strcspn(buf, "\n")] = 0;
     }
 
-    if (ack[0] == 'Y') {
-      printf("(R) acknowledge for f %d sent\n", sequence_num);
+    if (buf[0] == 'Y') {
+      f.kind = ack;
+      printf("(R) acknowledge for frame %d sent\n", f.seq);
+      // TODO: shift window here
+      if (between(frame_expected, f.seq, too_far) && !arrived[f.seq % window_size]) {
+        arrived[f.seq % window_size] = true;
+        while (arrived[frame_expected % window_size]) {
+          arrived[frame_expected % window_size] = false;
+          // advance lower edge of the receiver's window
+          inc(frame_expected);
+          // advance upper edge of the receiver's window
+          inc(too_far);
+        }
+      }
     } else {
-      sequence_num = -1;
+      f.kind = nak;
       printf("receiver: message not successfully received\n");
     }
-    sendto(socket, &sequence_num, sizeof(int), 
-        0, (struct sockaddr * ) & addr, addr_len);
+    sendto(socket, &f, sizeof f, 0, (struct sockaddr*) &addr, addr_len);
     // Send back the ack to the receiver 
   }
 }
@@ -59,7 +77,6 @@ int main(int argc, char * argv[]) {
   }
 
   int socket;
-  int window_size;
 
   window_size = atoi(argv[2]);
   
@@ -73,7 +90,7 @@ int main(int argc, char * argv[]) {
   socket = get_udp_server_socket(PORT);
 
   printf("receiver is now listening...\n");
-  receiver(socket, window_size);
+  receiver(socket);
   close(socket);
   return 0;
 }

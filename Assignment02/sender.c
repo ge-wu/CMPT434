@@ -1,3 +1,5 @@
+// Jiaye Wang jiw561 11231145
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,78 +7,91 @@
 #include "network.h"
 #include "queue.h"
 
-#define MSG_LEN 1024
+#define inc(k) if (k < window_size) k = k + 1; else k = 0;
+
+int window_size;
+int sockfd;  // socked used for UDP transmission
+boolean no_nak = true;
 
 static boolean between(seq_nr a, seq_nr b, seq_nr c) {
   return ((a <= b) && (b < c)) || ((c < a) && (a <= b)) || ((b < c) && (c < a));
 }
 
-void sender(int socket, int window_size, int timeout) {
+// Construct and send a data, ack, or nak frame. 
+static void send_frame(frame_kind fk, seq_nr frame_nr, 
+    seq_nr frame_expected, packet buffer[]) {
   frame f;
-  int ack;
-  char buf[MSG_LEN];
+
+  f.kind = fk;
+  f.seq = frame_nr;
+  f.ack = (frame_expected + window_size) % (window_size + 1);
+
+  if (fk == data)
+    strcpy(f.info, buffer[frame_nr % window_size].data);
+  if (fk == nak)
+    no_nak = false;
+  write(sockfd, &f, sizeof(f));
+}
+
+void sender(int socket, int timeout) {
+  char input[MSG_LEN];
+
+  frame f;
 
   seq_nr nbuffered;
+  seq_nr ack_expected;
   seq_nr next_frame_to_send;
   seq_nr frame_expected;
-  seq_nr base;
   seq_nr too_far;
+  event_type event;
 
   nbuffered = 0;
   frame_expected = 0;
   next_frame_to_send = 0;
+  ack_expected = 0;
   too_far = window_size;
+  event = ready;
 
-  boolean buffer[window_size];
+  boolean arrived[window_size];
+  packet out_buf[window_size];
+  packet in_buf[window_size];
+
   for (int i = 0; i< window_size; i++) {
-    buffer[i] = false;
+    arrived[i] = false;
   }
 
-  /* buffer = create_queue(sizeof(frame)); */
-  base = 0;
-
   for (;;) {
-    // 'If the number of messages that have been sent to the receiver and that 
-    // are still unacknowledged is less than the maximum sending window size, 
-    // the message should also be immediately sent to the receiver. '
     if (nbuffered < window_size) {
+      // Expand the sender window (NOT SHIFTING)
+      nbuffered++; 
       printf("> ");
-      if (fgets(buf, sizeof buf, stdin) != 0)  {
-        buf[strcspn(buf, "\n")] = 0;
+      if (fgets(input, sizeof(input), stdin) != 0)  {
+        input[strcspn(input, "\n")] = 0;
       }
-      f.seq = next_frame_to_send;
-      strcpy(f.msg, buf);
-
-      write(socket, &f, sizeof(f));
-      next_frame_to_send++;
-      nbuffered++;
-    } else {
+      // Put current frame to buffer. 
+      strcpy(out_buf[next_frame_to_send % window_size].data, input);
+      // transmit the frame. 
+      send_frame(data, next_frame_to_send, frame_expected, out_buf);
+      // Advance upper window edge. 
+      inc(next_frame_to_send);
+    } 
+    // wait while the current sender buffer is full. 
+    else { 
       printf("sender: no new frame will send until ack received\n");
-      ack = 0;
-      read(socket, &ack, sizeof(int));
-      // received a ack. 
-      if (ack != -1) {
-        printf("(S) acknowledge for frame %d received\n", ack);
-        // frames may be received in any order. 
-        if (between(frame_expected, ack, too_far) && !buffer[ack % window_size]) {
-          printf("Frame in range\n");
-          buffer[ack & window_size] = true;
-          while (buffer[frame_expected % window_size]) {
-            frame_expected++;   // advance upper edge of receiver window. 
-            too_far++;  // advance lower edge of receiver window. 
-          }
-        }
+      read(socket, &f, sizeof(frame));
+      // TODO: shift window on the sender side. 
+      // Note here only two possible frame kinds the sender can receive
+      // from the receiver, ack and nak. Hence, receiver will not send 
+      // data kind frame to sender!
+      if (f.kind == ack) {
         nbuffered--;
-      } else {
-
       }
     }
   }
 }
 
 int main(int argc, char * argv[]) {
-  int socket;
-  int window_size, timeout;
+  int timeout;
   if (argc != 5) {
     printf("usage: ./sender <IP address> 30000 <window size> <time out>\n");
     printf("    please check README for more usage detail :)");
@@ -86,7 +101,7 @@ int main(int argc, char * argv[]) {
   window_size = atoi(argv[3]);
   timeout = atoi(argv[4]);
 
-  socket = get_udp_client_socket(argv[1], argv[2]);
-  sender(socket, window_size, timeout);
-  close(socket);
+  sockfd = get_udp_client_socket(argv[1], argv[2]);
+  sender(sockfd, timeout);
+  close(sockfd);
 }
