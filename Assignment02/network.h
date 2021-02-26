@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/poll.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -25,7 +26,6 @@
 typedef unsigned int seq_nr;
 typedef enum {data, ack, nak} frame_kind;
 typedef enum {false, true} boolean;
-typedef enum {ready, wait, ack_timeout} event_type;
 
 typedef struct {char data[MSG_LEN];} packet;
 typedef struct {
@@ -37,12 +37,15 @@ typedef struct {
 
 
 // generate a UDP socket for server (receiver) 
-// param: the port number
+// hostname as parameter
 int get_udp_server_socket(char * );
 
 // generate a UDP socket for client (sender)
-// param: the hostname and the port number
+// hostname and port number as parameters
 int get_udp_client_socket(char * , char * );
 
+// let a, b, and c be the parameters, respectively
+// return true if b is in [a c)
+boolean between(seq_nr, seq_nr, seq_nr);
 
 #endif

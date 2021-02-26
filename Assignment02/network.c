@@ -1,8 +1,15 @@
 // Jiaye Wang jiw561 11231145
 
-#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>  /*JH*/
+#include <errno.h>  /*JH*/
+#include <time.h>   /*JH*/
 
 #include "network.h"
 
@@ -85,9 +92,6 @@ int get_udp_client_socket(char * hostname, char * port) {
   return sockfd;
 }
 
-void * get_in_addr(struct sockaddr *sa) {
-	if (sa->sa_family == AF_INET) {
-		return &(((struct sockaddr_in*)sa)->sin_addr);
-	}
-	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+boolean between(seq_nr a, seq_nr b, seq_nr c) {
+  return ((a <= b) && (b < c)) || ((c < a) && (a <= b)) || ((b < c) && (c < a));
 }

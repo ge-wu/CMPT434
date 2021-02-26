@@ -7,65 +7,84 @@
 #include "network.h"
 #include "queue.h"
 
-boolean no_nak = true;
-int window_size;
+int w_size, sockfd;
 
-#define inc(k) if (k < window_size) k = k + 1; else k = 0;
+#define inc(k) if (k < w_size) k = k + 1; else k = 0;
 
-static boolean between(seq_nr a, seq_nr b, seq_nr c) {
-  return ((a <= b) && (b < c)) || ((c < a) && (a <= b)) || ((b < c) && (c < a));
+// Construct and send a data, ack, or nak frame. 
+static void send_frame(frame_kind fk, seq_nr frame_nr, 
+    seq_nr frame_expected, packet buffer[]) {
+  frame f;
+
+  f.kind = fk;
+  f.seq = frame_nr;
+  f.ack = (frame_expected + w_size) % (w_size + 1);
+
+  if (fk == data)
+    strcpy(f.info, buffer[frame_nr % w_size].data);
+  write(sockfd, &f, sizeof(f));
 }
 
 void receiver(int socket) {
+  // dummy variables for UDP transmission. 
   struct sockaddr_storage addr;
   socklen_t addr_len;
-  char buf[MSG_LEN];
-  frame f;
-  frame s;
 
-  seq_nr too_far;
-  seq_nr frame_expected;
-  boolean arrived[window_size];
+  char input[MSG_LEN];  // store user input
 
-  for (int i = 0; i < window_size; i++) 
+  frame f;  // scratch variable
+
+  seq_nr too_far;  //  upper edge of the receiver's window + 1
+  seq_nr frame_expected;  // lower edge of the receiver's window
+  packet in_buf[w_size];  // buffers for the inbound stream
+  boolean arrived[w_size];  // inbound bit map
+
+  frame_expected = 0;  // frame number expected
+  too_far = w_size;  // receiver's upper window + 1
+  addr_len = sizeof(struct sockaddr_storage);
+
+  for (int i = 0; i < w_size; i++) 
     arrived[i] = false;
 
-  frame_expected = 0;
-  too_far = window_size;
-
   for (;;) {
-    printf("Cur window range: %d-%d\n", frame_expected, too_far);
-    addr_len = sizeof(struct sockaddr_storage);
+    // get the frame from sender and output it's sequence number and message. 
     recvfrom(socket, &f, sizeof f, 0, (struct sockaddr*) &addr, &addr_len);
-    // Parse the message and sequence number from the f. 
-
     printf("sequence number: %d\nmessage: %s\n", f.seq, f.info);
 
-    // Ask the receiver to input an ack. 
-    printf("(R) received message? (Y/N): ");
-    if (fgets(buf, sizeof ack, stdin) != NULL) {
-      buf[strcspn(buf, "\n")] = 0;
-    }
+    // promote input to simulate whether frame is received or lost. 
+    printf("receiver: received message? (Y/N): ");
+    if (fgets(input, sizeof ack, stdin) != NULL)
+      input[strcspn(input, "\n")] = 0;
 
-    if (buf[0] == 'Y') {
+    // Y for received, send a frame back to the sender. 
+    if (input[0] == 'Y') {
       f.kind = ack;
-      printf("(R) acknowledge for frame %d sent\n", f.seq);
+      printf("receiver: acknowledge for frame %d sent\n", f.seq);
       // TODO: shift window here
-      if (between(frame_expected, f.seq, too_far) && !arrived[f.seq % window_size]) {
-        arrived[f.seq % window_size] = true;
-        while (arrived[frame_expected % window_size]) {
-          arrived[frame_expected % window_size] = false;
-          // advance lower edge of the receiver's window
-          inc(frame_expected);
-          // advance upper edge of the receiver's window
-          inc(too_far);
+      if (between(frame_expected, f.seq, too_far) && !arrived[f.seq % w_size]) {
+        arrived[f.seq % w_size] = true;  //  mark buffer as full
+        /* in_buf[f.seq % w_size] = f.info;  // insert data into buffer */
+
+        // when a new data frame is considered to be correctly received, the 
+        // data frame that in front of it maybe already received. Therefore, 
+        // we need to shift the lower edge of the receiver's window one by one. 
+        // If the lower edge corresponded data frame is received, we will 
+        // remove from the buffer or transfer to the next layer. Otherwise, 
+        // the receiver window cannot shift forward even data frames that 
+        // are already received after the lower edge. 
+        while (arrived[frame_expected % w_size]) {
+          // remove from the buffer
+          arrived[frame_expected % w_size] = false;
+          inc(frame_expected);  // advance lower edge of the receiver's window
+          inc(too_far);  // advance upper edge of the receiver's window
         }
+        sendto(socket, &f, sizeof f, 0, (struct sockaddr*) &addr, addr_len);
       }
-    } else {
-      f.kind = nak;
-      printf("receiver: message not successfully received\n");
     }
-    sendto(socket, &f, sizeof f, 0, (struct sockaddr*) &addr, addr_len);
+    // Do nothing if not received. 
+    else {
+      continue;
+    }
     // Send back the ack to the receiver 
   }
 }
@@ -78,11 +97,10 @@ int main(int argc, char * argv[]) {
 
   int socket;
 
-  window_size = atoi(argv[2]);
+  w_size = atoi(argv[2]);
   
-  if (window_size < MIN_WSIZE || window_size > MAX_WSIZE) {
-    printf(
-        "error: window_size must between %d to %d, inclusive", 
+  if (w_size < MIN_WSIZE || w_size > MAX_WSIZE) {
+    printf("error: window size must between %d to %d, inclusive", 
         MIN_WSIZE, MAX_WSIZE);
     exit(1);
   }
