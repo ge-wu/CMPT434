@@ -1,0 +1,82 @@
+// Jiaye Wang jiw561 11231145
+
+Part A Design Documentation
+
+The following design document will describe the design of a sender and receiver
+that use the sliding window protocol, more specifically, the selective-repeat 
+protocol, with UDP socket connections. 
+
+Included Files:
+    Makefile: program make file
+    sender.c: selective-repeat sliding window sender
+    receiver.c: selective-repeat sliding window receiver
+    network.h: network and protocol definitions, including marcos 
+    network.c: network functions
+
+Overview
+    The implementation is mainly by studying *Figure 3-21. A sliding window 
+    protocol using selective repeat* from Tanenbaum's Computer Network. The 
+    source code is very exquisite and ingenious, it benefits learners a lot. 
+    Unfortunately, I don't have enough talent to reproduce it perfectly.  
+
+    For the network.h, UDP client and server generators are used 
+    directly from Assignment 1. I also add some structures to better 
+    organize data, the most important one is the frame structure. It contains 
+    important information that both the sender and receiver need to slide their
+    window. 
+
+    Both the sender and the receiver have a same size window. There does not exist 
+    an 'actual' window, rather two integers to represent the lower and upper 
+    edges of the window. The window will only shift forward if an frame That
+    has sequence number equal to each receiver or sender's lower edge.
+
+Sender
+    ./sender <IP address> <port> <window size> <timeout>
+
+    The sender has a window that is marked by the last ACK received and last 
+    frame sent. The sender will send all the frame in the window and waits 
+    for each of their corresponding ACK. Every time an ACK received, the 
+    sender window will shift when the smallest un-ACK-ed sequence number is at 
+    the last ACk received plus one. Since the ACKs can be arrived in any order, 
+    so that the window will not shift every time an ACK arrives. 
+
+Receiver
+    ./receiver <port> <window size>
+
+    The receiver has a window that is marked by the last frame received and 
+    largest acceptable frame. When the receiver received a frame, it will ask 
+    the user for an input to simulate whether or not the receiver received 
+    the message. Nothing will happen if the user input is not start with "Y". 
+    Otherwise, the receiver will send an ACK frame back to the sender. The 
+    receiver will shifts its window until the smallest unreceived sequence 
+    number is at last frame received plus one. 
+
+Frames and buffers
+    Data sends by the receiver and sender are in the format of a frame 
+    data structure. Each frame for the current window has a unique sequence 
+    number use to reorder the frame into the complete data once the 
+    transmission is complete. The receiver has a buffer to store all the 
+    arrived message for the current window. This buffer has the same size of 
+    the windows size (the command parameter of ./receiver). Once all the entry 
+    of the buffer is filled, it will clean all the entry to simulate the frames 
+    are pass to the next layer of the network. 
+
+Simulating packet loss
+    Once the receiver received a frame from the sender. It will prompt the user
+    for input. If a line of text beginning with "Y" is input, the receiver should 
+    consider the message to have been correctly received and a ACK frame will 
+    send back to the sender; otherwise, the receiver should consider the message
+    to have been corrupted or dropped within the network and nothing happen,
+    hence, the receiver will not send a NAK frame to the sender. 
+
+Timeout
+    I do not have too much experience dealing with timeout with C. I tried poll()
+    and select() and I am not capable to make them to work as expected. So I 
+    finally go with setsockopt(). It seems work pretty well, but I am not 
+    sure what potential issue will be. 
+
+Testing
+    The test is relatively simple. The main goal is to check whether the window
+    for receiver and sender is shifting due to corresponding transmission. For 
+    the certain window, test with frame lost at the beginning, at the very end, 
+    at the middle, all lost or all received. 

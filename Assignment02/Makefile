@@ -6,7 +6,6 @@ CPPFLAGS = -Wall -pedantic
 
 EXE = receiver sender
 
-
 .PHONY: clean all
 
 all: $(EXE)
