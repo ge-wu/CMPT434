@@ -7,9 +7,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <fcntl.h>  /*JH*/
-#include <errno.h>  /*JH*/
-#include <time.h>   /*JH*/
 
 #include "network.h"
 
