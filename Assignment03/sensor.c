@@ -1,101 +1,128 @@
-// Jiaye Wang jiw561 11231145
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <poll.h>
 
 #include "tcp.h"
 
 #define MSG_LEN 64
+#define MAX_ID 26
+ 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
-typedef struct {
-  char id;
-  char *data;
-} packet;
+typedef struct {char id; char data[11];} packet;
 
-packet buffer[26];
+packet buffer[MAX_ID];
 
-
-int main(int argc, char *argv[]) {
-  if (argc != 5) {
-    printf("usage: ./sensor <ID> <port> <storage space> <data>\n");
-    exit(EXIT_FAILURE);
-  }
-
-  char id;
-  char *port, *cur_port;
-  char input[MSG_LEN];
-  char cur_cmd;
-
-  int server_sockfd, client_sockfd, new_sockfd;
-  int storage_space;
-  int space_cnt;  // count how many space are being used.
-
-  packet p;
-
-  id = argv[1][0];
-  if (strlen(argv[1]) != 1 || (id < 'A' || id > 'Z')) {
-    printf("error: ID should be a single upper case letter\n");
-    exit(EXIT_FAILURE);
-  }
-
-  port = argv[2];
-  if (atoi(port) > 40000 || atoi(port) < 30000) {
-    printf("error: port should between 30000 ~ 40000, inclusive\n");
-    exit(EXIT_FAILURE);
-  }
-  storage_space = atoi(argv[3]);
-
-  // Initialize the buffer. Note there are max of 26 IDs, and we can use 
-  // (ID - 'A') to get the index. E.g.: 'A' - 'A' = 0, 'B' - 'A' = 1, etc.
+void transit_to_basestation() {
+  printf("Start to transmit data to base station...\n");
   for (int i = 0; i < 26; i++) {
-    buffer[i].id = '#';
-    buffer[i].data = "";
+      if (buffer[i].id == '#') continue;
+      printf("ID: %d\nData: %s\n", buffer[i].id, buffer[i].data);
+      buffer[i].id = '#';
+      bzero(buffer[i].data, 11);
   }
-  buffer[id - 'A'].id = id;
-  buffer[id - 'A'].data = argv[5];
-
-  server_sockfd = tcp_server_init("potato", port);
-
-  for (;;) {
-    cur_cmd = '#';
-    cur_port = "";
-    fgets(input, sizeof(input), stdin);  // read user input
-    sscanf(input, "%c %s", &cur_cmd, cur_port);  // parse user input
-    
-    // terminate the process
-    if (cur_cmd == 'Q') {
-      printf("Bye~ :)\n");
-      break;
-    }
-
-    if (cur_cmd == 'C') {
-      client_sockfd = tcp_client_init(cur_port);
-      new_sockfd = tcp_accept(client_sockfd);
-      for (int i = 0; i < 26; i++) {
-        if (buffer[i].id == '#') continue;  // skip empty buffer
-        send(new_sockfd, &buffer[i], sizeof(packet), 0);
-        printf("ID: %c\nData:%s\n", buffer[i].id, buffer[i].data);
-        recv(new_sockfd, &p, sizeof(packet), 0);
-        printf("ID: %c\nData:%s\n", p.id, p.data);
-        printf("-------------------------");
-      }
-    } else if (cur_cmd == 'B') {
-      // print each data packet that it has buffered. Such data packets 
-      // are now considered to have been delivered to the base station. 
-      // That is, the packet will be removed from the buffer. 
-      for (int i = 0; i < storage_space; i++) {
-        if (buffer[i].id == '#') continue;  // skip empty buffer
-        printf("ID: %c\nData:%s\n", buffer[i].id, buffer[i].data);
-      }
-      space_cnt = 0;
-    } else {
-      printf("error: unrecognized input\n");
-    }
-
-  }
-
-  return 0;
-
+  printf("Transmission complete...\n");
 }
+
+int main(int argc , char *argv[]) {
+    if (argc != 5) {
+        fprintf(stderr, "Usage: ./sensor <ID> <port> <storage space> <msg>\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // dummy variables for TCP
+    socklen_t sin_size;
+    struct sockaddr_in their_addr;
+
+    int sockfd, new_sockfd, client_sockfd;
+    int max_sd;
+    char id = argv[1][0];
+
+    sockfd = tcp_server_init(argv[2]);
+
+    fd_set readfds;
+
+    if (listen(sockfd, BACKLOG) == -1) {
+        perror("listen failed");
+        exit(EXIT_FAILURE);
+    }
+    printf("Sensor %s is up to the air...\n", argv[1]);
+
+    // initialize sensor buffer, 
+    // where "#" ID and empty data represents empty entry of the buffer
+    for (int i = 0; i < MAX_ID; i++) {
+        buffer[i].id = '#';
+        strcpy(buffer[i].data, "#");
+    }
+    buffer[id - 'A'].id = id;
+    strcpy(buffer[id - 'A'].data, argv[4]);
+
+    while (1) {
+        FD_ZERO(&readfds);
+        FD_SET(sockfd, &readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        max_sd = sockfd;
+
+        int activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
+        if (activity < 0) {
+          perror("select");
+          exit(EXIT_FAILURE);
+        }
+
+        // incoming connection
+        if (FD_ISSET(sockfd, &readfds)) {
+          new_sockfd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size);
+          printf("Incoming connection...\n");
+          if (new_sockfd == -1) {
+              perror("accept");
+              exit(EXIT_FAILURE);
+          }
+          for (int i = 0; i < 26; i++) {
+            packet p;
+            if (recv(new_sockfd, &p, sizeof(packet), 0) < 0) 
+              perror("recv");
+            if (p.id != '#') 
+              printf("Receive from %c: %s\n", p.id, p.data);
+          }
+          /* close(new_sockfd); */
+        }
+        // handle user input
+        if (FD_ISSET(STDIN_FILENO, &readfds)) {
+            char input[64];
+            fgets(input, sizeof(input), stdin);
+            printf("Your input: %s", input);
+            // terminate the sensor.
+            if (input[0] == 'Q') break;
+
+            // start to transmit data between sensors. 
+            if (input[0] == 'C') {
+              // establish the connection
+                client_sockfd = tcp_client_init("tux8", "30000");
+                for (int i = 0; i < 26; i++) {
+                  if (send(client_sockfd, &buffer[i], sizeof(packet), 0) < 0) {
+                      perror("send");
+                  }
+                }
+            } 
+            // transmit data to the base station and buffer will be reset.
+            else if (input[0] == 'B') {
+              transit_to_basestation();
+            } else {
+                printf("Unrecognized command\n");
+            }
+        }
+    }
+
+    close(sockfd);
+    printf("Bye :)\n");
+    return 0;
+}
+

@@ -13,14 +13,10 @@
  *  Positive integer for TCP server socket. 
  *  Return negative for failed initialization. 
  */
-int tcp_server_init(const char *host, const char *port);
+int tcp_server_init(const char *port);
 
 // Initialize a TCP client socket. 
-int tcp_client_init(const char *port);
-
-// 
-int tcp_accept(int sockfd);
+int tcp_client_init(const char *hostname, const char *port);
 
 
 #endif
-
