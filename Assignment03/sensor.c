@@ -41,13 +41,13 @@ int main(int argc , char *argv[]) {
       exit(EXIT_FAILURE);
     }
 
-    if (atoi(argv[3]) <= 0) {
-      printf("error: storage space must be positive integer\n");
-      exit(EXIT_FAILURE);
-    }
-    
     if (atoi(argv[2]) < 30000 || atoi(argv[2]) > 40000) {
       printf("error: port must between 30000 to 40000, inclusive\n");
+      exit(EXIT_FAILURE);
+    }
+
+    if (atoi(argv[3]) <= 0) {
+      printf("error: storage space must be at least 1\n");
       exit(EXIT_FAILURE);
     }
     
