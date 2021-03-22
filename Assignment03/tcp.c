@@ -1,4 +1,5 @@
 // Jiaye Wang jiw561 11231145
+
 #include <unistd.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -31,7 +32,7 @@ int tcp_server_init(const char *port) {
   for (p = serverinfo; p != NULL; p = p -> ai_next) {
     sockfd = socket(p -> ai_family, p -> ai_socktype, p -> ai_protocol);
     if (sockfd == -1) {
-      perror("TCP server: socket");
+      perror("socket");
       continue;
     }
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, & yes, sizeof(int)) == -1) {
@@ -40,7 +41,7 @@ int tcp_server_init(const char *port) {
     }
     if (bind(sockfd, p -> ai_addr, p -> ai_addrlen) == -1) {
       close(sockfd);
-      perror("TCP server: bind");
+      perror("bind");
       continue;
     }
     // Success binded.
@@ -51,7 +52,7 @@ int tcp_server_init(const char *port) {
 
   // No address succeeded.
   if (p == NULL) {
-    fprintf(stderr, "TCP server: failed to bind socket\n");
+    fprintf(stderr, "failed to bind socket\n");
     exit(EXIT_FAILURE);
   }
   return sockfd;
@@ -77,20 +78,19 @@ int tcp_client_init(const char *hostname, const char *port) {
   for (p = serverinfo; p != NULL; p = p -> ai_next) {
     sockfd = socket(p -> ai_family, p -> ai_socktype, p -> ai_protocol);
     if (sockfd == -1) {
-      perror("TCP client: socket");
+      perror("socket");
       continue;
     }
     if (connect(sockfd, p -> ai_addr, p -> ai_addrlen) == -1) {
       close(sockfd);
-      perror("TCP client: connect");
+      perror("connect");
       continue;
     }
     break;
   }
 
   if (p == NULL) {
-    fprintf(stderr, "client: failed to connect\n");
-    exit(EXIT_FAILURE);
+    return -1;
   }
   // No longer need
   freeaddrinfo(serverinfo);

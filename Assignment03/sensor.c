@@ -1,3 +1,5 @@
+// Jiaye Wang jiw561 11231145
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -15,21 +17,17 @@
 #define MSG_LEN 64
 #define MAX_ID 26
  
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-
 typedef struct {char id; char data[11];} packet;
 
 packet buffer[MAX_ID];
 
-void transit_to_basestation() {
-  printf("Start to transmit data to base station...\n");
-  for (int i = 0; i < 26; i++) {
-      if (buffer[i].id == '#') continue;
-      printf("ID: %d\nData: %s\n", buffer[i].id, buffer[i].data);
-      buffer[i].id = '#';
-      bzero(buffer[i].data, 11);
+int count_space_used() {
+  int ans = 0;
+  for (int i = 0; i < MAX_ID; i++) {
+    if (buffer[i].id != '#') 
+      ans++;
   }
-  printf("Transmission complete...\n");
+  return ans;
 }
 
 int main(int argc , char *argv[]) {
@@ -44,26 +42,26 @@ int main(int argc , char *argv[]) {
 
     int sockfd, new_sockfd, client_sockfd;
     int max_sd;
+    int storage_space = atoi(argv[3]);
     char id = argv[1][0];
 
     sockfd = tcp_server_init(argv[2]);
 
     fd_set readfds;
 
-    if (listen(sockfd, BACKLOG) == -1) {
-        perror("listen failed");
-        exit(EXIT_FAILURE);
-    }
-    printf("Sensor %s is up to the air...\n", argv[1]);
-
     // initialize sensor buffer, 
-    // where "#" ID and empty data represents empty entry of the buffer
     for (int i = 0; i < MAX_ID; i++) {
         buffer[i].id = '#';
         strcpy(buffer[i].data, "#");
     }
     buffer[id - 'A'].id = id;
     strcpy(buffer[id - 'A'].data, argv[4]);
+
+    if (listen(sockfd, BACKLOG) == -1) {
+        perror("listen failed");
+        exit(EXIT_FAILURE);
+    }
+    printf("Sensor %c is up to the air...\n", id);
 
     while (1) {
         FD_ZERO(&readfds);
@@ -80,45 +78,69 @@ int main(int argc , char *argv[]) {
         // incoming connection
         if (FD_ISSET(sockfd, &readfds)) {
           new_sockfd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size);
-          printf("Incoming connection...\n");
           if (new_sockfd == -1) {
               perror("accept");
               exit(EXIT_FAILURE);
           }
+          printf("Incoming connection...\n");
+
           for (int i = 0; i < 26; i++) {
             packet p;
             if (recv(new_sockfd, &p, sizeof(packet), 0) < 0) 
-              perror("recv");
-            if (p.id != '#') 
+              perror("server recv");
+            if (p.id != '#') {
+              // Add to the buffer if we still have free space in the storage
               printf("Receive from %c: %s\n", p.id, p.data);
+              if (count_space_used() < storage_space + 1) {
+                buffer[p.id - 'A'].id = p.id;
+                strcpy(buffer[p.id - 'A'].data, p.data);
+                printf("Buffered successfully\n");
+              } else {
+                printf("Storage is full\n");
+              }
+            }
           }
-          /* close(new_sockfd); */
+          close(new_sockfd);
         }
+
         // handle user input
         if (FD_ISSET(STDIN_FILENO, &readfds)) {
-            char input[64];
-            fgets(input, sizeof(input), stdin);
-            printf("Your input: %s", input);
-            // terminate the sensor.
-            if (input[0] == 'Q') break;
+            char input[64], port[10], cmd;
+            fgets(input, sizeof(input), stdin);  // get user input
+            sscanf(input, "%c%s", &cmd, port);
 
+            if (cmd == 'Q') break;  // terminate the sensor
             // start to transmit data between sensors. 
-            if (input[0] == 'C') {
+            if (cmd == 'C') {
               // establish the connection
-                client_sockfd = tcp_client_init("tux8", "30000");
+              if ((client_sockfd = tcp_client_init("tux8", port)) != -1) {
                 for (int i = 0; i < 26; i++) {
-                  if (send(client_sockfd, &buffer[i], sizeof(packet), 0) < 0) {
+                  if (send(client_sockfd, &buffer[i], sizeof(packet), 0) < 0)
                       perror("send");
-                  }
+                  if (buffer[i].id != '#') 
+                    printf("Send from %c: %s\n", buffer[i].id, buffer[i].data);
                 }
+                close(client_sockfd);
+              }
             } 
             // transmit data to the base station and buffer will be reset.
-            else if (input[0] == 'B') {
-              transit_to_basestation();
+            else if (cmd == 'B') {
+              printf("Start to transmit data to base station...\n");
+              for (int i = 0; i < 26; i++) {
+                  if (buffer[i].id == '#') continue;
+                  printf("ID: %c: %s\n", buffer[i].id, buffer[i].data);
+                  // Do not clean sensor's own data
+                  if (buffer[i].id != id) {
+                    buffer[i].id = '#';
+                    bzero(buffer[i].data, 11);
+                  }
+              }
+              printf("Transmission complete...\n");
             } else {
-                printf("Unrecognized command\n");
+              printf("Unrecognized command\n");
             }
         }
+        printf("-------------------------------------------\n");  // divide line
     }
 
     close(sockfd);
