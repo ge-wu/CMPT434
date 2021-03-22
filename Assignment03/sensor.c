@@ -17,7 +17,7 @@
 #define MSG_LEN 64
 #define MAX_ID 26
  
-typedef struct {char id; char data[11];} packet;
+typedef struct {char id; char data[10];} packet;
 
 packet buffer[MAX_ID];
 
@@ -32,8 +32,28 @@ int count_space_used() {
 
 int main(int argc , char *argv[]) {
     if (argc != 5) {
-        fprintf(stderr, "Usage: ./sensor <ID> <port> <storage space> <msg>\n");
+        printf("usage: ./sensor <ID> <port> <storage space> <msg>\n");
         exit(EXIT_FAILURE);
+    }
+
+    if (strlen(argv[1]) != 1 || (argv[1][0] < 'A' || argv[1][0] > 'Z')) {
+      printf("error: ID must be a uppercase English letter\n");
+      exit(EXIT_FAILURE);
+    }
+
+    if (atoi(argv[3]) <= 0) {
+      printf("error: storage space must be positive integer\n");
+      exit(EXIT_FAILURE);
+    }
+    
+    if (atoi(argv[2]) < 30000 || atoi(argv[2]) > 40000) {
+      printf("error: port must between 30000 to 40000, inclusive\n");
+      exit(EXIT_FAILURE);
+    }
+    
+    if (strlen(argv[4]) > 10) {
+      printf("error: msg cannot exceed 10 characters \n");
+      exit(EXIT_FAILURE);
     }
 
     // dummy variables for TCP
