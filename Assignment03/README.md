@@ -1,7 +1,7 @@
 # Assignment 3
 ## Part A
-Implementation of or a Epidemic protocol (Gossip protocol) with C programming 
-language. A sensor reprsents a node and the sensor will able to transmit 
+Implementation of the Epidemic protocol (Gossip protocol) with C programming 
+language. A sensor represents a node and the sensor will able to transmit 
 data between each other.  Please check `PartA-Design.pdf` for more
 implementation details. 
 
@@ -31,5 +31,3 @@ it with your preference.
 - ID can only be an uppercase English alphabet, so that there are at most 26 
 sensors are allowed. 
 - `<msg>` must be a single word (without spaces) that at most 10 characters.  
-## Part B
-Please check `PartB.pdf`.

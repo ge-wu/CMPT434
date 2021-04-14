@@ -50,7 +50,3 @@ both the sender and receiver at the same time. Although, the order to start
 them does not matter. 
 - The program does not check the length of the user input, because that is not 
 important for the purpose of this assignment. 
-
-
-## Part B
-Please check `PartB.pdf`.
